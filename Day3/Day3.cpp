@@ -1,7 +1,31 @@
-﻿#include <iostream>
-#include <vector>
+﻿#include "day3.h"
 
-using namespace std;
+int main()
+{
+	//part1();
+	part2();
+
+	return 0;
+}
+
+void part1()
+{
+	vector<vector<char>> matrix = read_map_matrix();
+	int numberOfTrees = get_number_of_trees_in_path(matrix, 3, 1);
+	cout << numberOfTrees;
+}
+
+void part2()
+{
+	vector<vector<char>> matrix = read_map_matrix();
+	unsigned long long numberOfTrees = get_number_of_trees_in_path(matrix, 1, 1);
+	unsigned long long numberOfTrees2 = get_number_of_trees_in_path(matrix, 3, 1);
+	unsigned long long numberOfTrees3 = get_number_of_trees_in_path(matrix, 5, 1);
+	unsigned long long numberOfTrees4 = get_number_of_trees_in_path(matrix, 7, 1);
+	unsigned long long numberOfTrees5 = get_number_of_trees_in_path(matrix, 1, 2);
+	unsigned long long answer = numberOfTrees * numberOfTrees2 * numberOfTrees3 * numberOfTrees4 * numberOfTrees5;
+	cout << answer;
+}
 
 vector<vector<char>> read_map_matrix()
 {
@@ -41,33 +65,4 @@ int get_number_of_trees_in_path(vector<vector<char>> matrix, int right, int down
 	}
 
 	return numberOfTrees;
-}
-
-int part1()
-{
-	vector<vector<char>> matrix = read_map_matrix();
-	int numberOfTrees = get_number_of_trees_in_path(matrix, 3, 1);
-	cout << numberOfTrees;
-
-	return 0;
-}
-
-int part2()
-{
-	vector<vector<char>> matrix = read_map_matrix();
-	unsigned long long numberOfTrees = get_number_of_trees_in_path(matrix, 1, 1);
-	unsigned long long numberOfTrees2 = get_number_of_trees_in_path(matrix, 3, 1);
-	unsigned long long numberOfTrees3 = get_number_of_trees_in_path(matrix, 5, 1);
-	unsigned long long numberOfTrees4 = get_number_of_trees_in_path(matrix, 7, 1);
-	unsigned long long numberOfTrees5 = get_number_of_trees_in_path(matrix, 1, 2);
-	unsigned long long answer = numberOfTrees * numberOfTrees2 * numberOfTrees3 * numberOfTrees4 * numberOfTrees5;
-	cout << answer;
-
-	return 0;
-}
-
-int main()
-{
-	//return part1();
-	return part2();
 }

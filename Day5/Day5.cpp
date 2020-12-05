@@ -1,30 +1,26 @@
-﻿#include <iostream>
-#include <string>
-#include <list>
+﻿#include "day5.h"
 
-using namespace std;
-
-int get_location(string pass, char lower_char)
+int main()
 {
-	unsigned char min = 0;
-	unsigned char max = pow(2, pass.size()) - 1;
+	//part1();
+	part2();
 
-	for (int i = 0; i < pass.size(); i++)
-	{
-		if (pass.at(i) == lower_char)
-		{
-			max = min + ((max - min) >> 1);
-		}
-		else
-		{
-			min = 1 + min + ((max - min) >> 1);
-		}
-	}
-
-	return min;
+	return 0;
 }
 
-int read_max_pass_id()
+void part1()
+{
+	int max_pass_id = find_max_pass_id();
+	cout << max_pass_id;
+}
+
+void part2()
+{
+	int missing_pass_ids = find_missing_pass_id();
+	cout << missing_pass_ids;
+}
+
+int find_max_pass_id()
 {
 	string pass;
 	int row, seat, pass_id, max_pass_id = 0;
@@ -42,6 +38,23 @@ int read_max_pass_id()
 	}
 
 	return max_pass_id;
+}
+
+int find_missing_pass_id()
+{
+	list<int> pass_ids = read_all_pass_ids();
+	pass_ids.sort();
+
+	int last_read_pass_id = -1;
+	for (int const& pass_id : pass_ids)
+	{
+		if ((pass_id - 1) > last_read_pass_id && last_read_pass_id >= 0)
+			return pass_id - 1;
+
+		last_read_pass_id = pass_id;
+	}
+
+	return -1;
 }
 
 list<int> read_all_pass_ids()
@@ -64,43 +77,18 @@ list<int> read_all_pass_ids()
 	return pass_ids;
 }
 
-int find_missing_pass_id()
+int get_location(string pass, char lower_char)
 {
-	list<int> pass_ids = read_all_pass_ids();
-	pass_ids.sort();
+	unsigned char min = 0;
+	unsigned char max = pow(2, pass.size()) - 1;
 
-	int last_read_pass_id = -1;
-	for (int const& pass_id : pass_ids)
+	for (int i = 0; i < pass.size(); i++)
 	{
-		if ((pass_id - 1) > last_read_pass_id && last_read_pass_id >= 0)
-		{
-			return pass_id - 1;
-		}
-
-		last_read_pass_id = pass_id;
+		if (pass.at(i) == lower_char)
+			max = min + ((max - min) >> 1);
+		else
+			min = 1 + min + ((max - min) >> 1);
 	}
 
-	return -1;
-}
-
-int part1()
-{
-	int max_pass_id = read_max_pass_id();
-	cout << max_pass_id;
-
-	return 0;
-}
-
-int part2()
-{
-	int missing_pass_ids = find_missing_pass_id();
-	cout << missing_pass_ids;
-
-	return 0;
-}
-
-int main()
-{
-	//return part1();
-	return part2();
+	return min;
 }

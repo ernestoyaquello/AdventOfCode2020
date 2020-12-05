@@ -1,7 +1,31 @@
-﻿#include <iostream>
-#include <vector>
+﻿#include "day1_recursive.h"
 
-using namespace std;
+int main()
+{
+	//part1();
+	part2();
+
+	return 0;
+}
+
+void part1()
+{
+	int solution = find_solution(2, 2020);
+	cout << solution;
+}
+
+void part2()
+{
+	int solution = find_solution(3, 2020);
+	cout << solution;
+}
+
+int find_solution(int number_of_numbers, int goal)
+{
+	vector<int> numbers = read_numbers();
+	vector<int> indices_sequence(number_of_numbers);
+	return find_solution_recursively(numbers, &indices_sequence, 0, goal);
+}
 
 vector<int> read_numbers()
 {
@@ -44,37 +68,8 @@ int find_solution_recursively(const vector<int> numbers, vector<int>* indices_se
 		else
 		{
 			solution = find_solution_recursively(numbers, indices_sequence, level + 1, goal);
-		}		
+		}
 	}
 
 	return solution;
-}
-
-int find_solution(int number_of_numbers, int goal)
-{
-	vector<int> numbers = read_numbers();
-	vector<int> indices_sequence(number_of_numbers);
-	return find_solution_recursively(numbers, &indices_sequence, 0, goal);
-}
-
-int part1()
-{
-	int solution = find_solution(2, 2020);
-	cout << solution;
-
-	return 0;
-}
-
-int part2()
-{
-	int solution = find_solution(3, 2020);
-	cout << solution;
-
-	return 0;
-}
-
-int main()
-{
-	//return part1();
-	return part2();
 }

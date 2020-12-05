@@ -1,9 +1,14 @@
-﻿#include <iostream>
-#include <vector>
+﻿#include "day1.h"
 
-using namespace std;
+int main()
+{
+	//bool result = part1();
+	bool result = part2();
 
-int part1()
+	return result ? 0 : -1;
+}
+
+bool part1()
 {
 	vector<int> numbers;
 
@@ -17,17 +22,17 @@ int part1()
 			if (previous_number + number == 2020)
 			{
 				cout << previous_number * number;
-				return 0;
+				return true;
 			}
 		}
 
 		numbers.push_back(number);
 	}
 
-	return -1;
+	return false;
 }
 
-int part2()
+bool part2()
 {
 	vector<int> numbers;
 
@@ -40,15 +45,14 @@ int part2()
 		{
 			for (int j = 0; j < numbers.size(); j++)
 			{
-				if (i == j)
-					continue;
+				if (i == j) continue;
 
 				int previous_number = numbers.at(i);
 				int previous_number_2 = numbers.at(j);
 				if (number + previous_number + previous_number_2 == 2020)
 				{
 					cout << number * previous_number * previous_number_2;
-					return 0;
+					return true;
 				}
 			}
 		}
@@ -56,11 +60,5 @@ int part2()
 		numbers.push_back(number);
 	}
 
-	return -1;
-}
-
-int main()
-{
-	//return part1();
-	return part2();
+	return false;
 }

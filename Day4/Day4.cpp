@@ -1,66 +1,30 @@
-﻿#include <iostream>
-#include <sstream>
-#include <string>
-#include <regex>
+﻿#include "day4.h"
 
-using namespace std;
+const string required_fields[] = { "byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid" };
+const string valid_eye_colors[] = { "amb", "blu", "brn", "gry", "grn", "hzl", "oth" };
 
-bool is_year_valid(string year_string, int min_year, int max_year)
+int main()
 {
-	int year = 0;
-	stringstream year_stream(year_string);
-	year_stream >> year;
-	return year >= min_year && year <= max_year;
+	//part1();
+	part2();
+
+	return 0;
 }
 
-bool is_data_valid(char* field, string field_value)
+void part1()
 {
-	if (strcmp(field, "byr") == 0)
-	{
-		return is_year_valid(field_value, 1920, 2002);
-	}
-	else if (strcmp(field, "iyr") == 0)
-	{
-		return is_year_valid(field_value, 2010, 2020);
-	}
-	else if (strcmp(field, "eyr") == 0)
-	{
-		return is_year_valid(field_value, 2020, 2030);
-	}
-	else if (strcmp(field, "hgt") == 0)
-	{
-		int height = 0;
-		string units;
-		stringstream field_value_stream(field_value);
-		field_value_stream >> height >> units;
+	int valid_total = get_number_of_valid_passports(false);
+	cout << valid_total;
+}
 
-		if (units == "cm")
-			return height >= 150 && height <= 193;
-		else if (units == "in")
-			return height >= 59 && height <= 76;
-
-		return false;
-	}
-	else if (strcmp(field, "hcl") == 0)
-	{
-		return field_value.at(0) == '#' && regex_match(field_value, regex("#[a-f0-9]{6}"));
-	}
-	else if (strcmp(field, "ecl") == 0)
-	{
-		const string valid_eye_colors[] = { "amb", "blu", "brn", "gry", "grn", "hzl", "oth" };
-		return find(begin(valid_eye_colors), end(valid_eye_colors), field_value) != end(valid_eye_colors);
-	}
-	else if (strcmp(field, "pid") == 0)
-	{
-		return regex_match(field_value, regex("[0-9]{9}"));
-	}
-
-	return false;
+void part2()
+{
+	int valid_total = get_number_of_valid_passports(true);
+	cout << valid_total;
 }
 
 int get_number_of_valid_passports(bool validate_data)
 {
-	const string required_fields[] = { "byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid" };
 	const int required_fields_size = sizeof(required_fields) / sizeof(required_fields[0]);
 	string _;
 	string field_value;
@@ -103,24 +67,49 @@ int get_number_of_valid_passports(bool validate_data)
 	return valid_passports;
 }
 
-int part1()
+bool is_data_valid(char* field, string field_value)
 {
-	int valid_total = get_number_of_valid_passports(false);
-	cout << valid_total;
+	if (strcmp(field, "byr") == 0)
+		return is_year_valid(field_value, 1920, 2002);
 
-	return 0;
+	else if (strcmp(field, "iyr") == 0)
+		return is_year_valid(field_value, 2010, 2020);
+
+	else if (strcmp(field, "eyr") == 0)
+		return is_year_valid(field_value, 2020, 2030);
+
+	else if (strcmp(field, "hgt") == 0)
+		return is_height_valid(field_value);
+
+	else if (strcmp(field, "hcl") == 0)
+		return field_value.at(0) == '#' && regex_match(field_value, regex("#[a-f0-9]{6}"));
+
+	else if (strcmp(field, "ecl") == 0)
+		return find(begin(valid_eye_colors), end(valid_eye_colors), field_value) != end(valid_eye_colors);
+
+	else if (strcmp(field, "pid") == 0)
+		return regex_match(field_value, regex("[0-9]{9}"));
+
+	return false;
 }
 
-int part2()
+bool is_year_valid(string year_string, int min_year, int max_year)
 {
-	int valid_total = get_number_of_valid_passports(true);
-	cout << valid_total;
-
-	return 0;
+	int year = 0;
+	stringstream year_stream(year_string);
+	year_stream >> year;
+	return year >= min_year && year <= max_year;
 }
 
-int main()
+bool is_height_valid(string height_string)
 {
-	//return part1();
-	return part2();
+	int height = 0;
+	string units;
+	stringstream field_value_stream(height_string);
+	field_value_stream >> height >> units;
+
+	if (units == "cm") return height >= 150 && height <= 193;
+	else if (units == "in") return height >= 59 && height <= 76;
+
+	return false;
 }

@@ -1,8 +1,14 @@
-﻿#include <iostream>
+﻿#include "day2.h"
 
-using namespace std;
+int main()
+{
+	//part1();
+	part2();
 
-int part1()
+	return 0;
+}
+
+void part1()
 {
 	int validTotal = 0;
 
@@ -17,21 +23,16 @@ int part1()
 
 		int occurrences = 0;
 		for (int i = 0; i < password.size(); i++)
-		{
-			char password_char = password.at(i);
-			occurrences += character == password_char ? 1 : 0;
-		}
+			occurrences += character == password.at(i) ? 1 : 0;
 
 		if (occurrences >= min && occurrences <= max)
 			validTotal++;
 	}
 
 	cout << validTotal;
-
-	return 0;
 }
 
-int part2()
+void part2()
 {
 	int validTotal = 0;
 
@@ -46,18 +47,9 @@ int part2()
 
 		int is_at_first = first_index <= password.size() && password.at(first_index - 1) == character ? 1 : 0;
 		int is_at_second = second_index <= password.size() && password.at(second_index - 1) == character ? 1 : 0;
-
 		if (is_at_first + is_at_second == 1)
 			validTotal++;
 	}
 
 	cout << validTotal;
-
-	return 0;
-}
-
-int main()
-{
-	//return part1();
-	return part2();
 }
