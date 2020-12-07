@@ -2,47 +2,30 @@
 
 int main()
 {
-	//part1();
-	part2();
+	vector<bag_type> bags = read_bags();
+	int result = part1(bags);
+	//int result = part2(bags);
+	cout << result;
+
+	for (bag_type bag : bags)
+		delete bag.contains;
 
 	return 0;
 }
 
-void part1()
+int part1(vector<bag_type> bags)
 {
-	vector<bag_type> bags = read_bags();
 	int number_of_valid_bags = 0;
 	for (bag_type bag : bags)
-	{
-		bool can_carry = can_carry_bag(bag, "shiny gold");
-		if (can_carry) number_of_valid_bags++;
-	}
+		number_of_valid_bags += can_carry_bag(bag, "shiny gold") ? 1 : 0;
 
-	cout << number_of_valid_bags;
-
-	for (bag_type bag : bags) delete bag.contains;
+	return number_of_valid_bags;
 }
 
-void part2()
+int part2(vector<bag_type> bags)
 {
-	vector<bag_type> bags = read_bags();
-
-	bag_type shinny_gold_bag;
-	bool found = false;
-	for (int i = 0; i < bags.size() && !found; i++)
-	{
-		bag_type bag = bags[i];
-		if (bag.color.compare("shiny gold") == 0)
-		{
-			shinny_gold_bag = bag;
-			found = true;
-		}
-	}
-
-	int total_bags = number_of_bags_within(shinny_gold_bag);
-	cout << total_bags;
-
-	for (bag_type bag : bags) delete bag.contains;
+	bag_type shiny_gold_bag = find_bag(bags, "shiny gold");
+	return number_of_bags_within(shiny_gold_bag);
 }
 
 vector<bag_type> read_bags()
@@ -51,7 +34,7 @@ vector<bag_type> read_bags()
 
 	while (!cin.eof())
 	{
-		bag_type bag = read_bag_type(true);
+		bag_type bag = read_bag(true);
 		if (bag.color.compare(" ") != 0)
 			bags.push_back(bag);
 	}
@@ -63,11 +46,9 @@ vector<bag_type> read_bags()
 }
 
 // TODO Consider using regex to avoid this messy way of reading the data
-bag_type read_bag_type(bool is_first)
+bag_type read_bag(bool is_first)
 {
 	bag_type bag;
-	bag.contains = new vector<bag_type>();
-
 	string _;
 	string first_color_word;
 	string second_color_word;
@@ -89,23 +70,18 @@ bag_type read_bag_type(bool is_first)
 	if (is_first)
 	{
 		cin >> _;
-		cin.get();
-
-		if (!isdigit(cin.peek()))
+		if (cin.get() && !isdigit(cin.peek()))
 		{
 			cin >> _ >> _ >> _;
 			cin.get();
 		}
-		else
+		else while (isdigit(cin.peek()))
 		{
-			while (isdigit(cin.peek()))
-			{
-				bag_type inner_bag = read_bag_type(false);
-				if (inner_bag.number > 0 && inner_bag.color.compare(" ") != 0)
-					bag.contains->push_back(inner_bag);
+			bag_type inner_bag = read_bag(false);
+			if (inner_bag.number > 0 && inner_bag.color.compare(" ") != 0)
+				bag.contains->push_back(inner_bag);
 
-				cin.get();
-			}
+			cin.get();
 		}
 	}
 
@@ -122,12 +98,11 @@ void complete_bag(vector<bag_type> bags, bag_type* bag_to_complete)
 		bag_type bag = bags[i];
 		if (bag.color.compare(bag_to_complete->color) == 0)
 		{
-			if ((*bag_to_complete).contains != bag.contains)
-			{
-				delete (*bag_to_complete).contains;
-				(*bag_to_complete).contains = bag.contains;
-				(*bag_to_complete).complete = bag.complete;
-			}
+			if (bag_to_complete->contains != bag.contains)
+				delete bag_to_complete->contains;
+
+			bag_to_complete->contains = bag.contains;
+			bag_to_complete->complete = bag.complete;
 
 			for (int j = 0; !bag_to_complete->complete && j < bag_to_complete->contains->size(); j++)
 			{
@@ -135,7 +110,7 @@ void complete_bag(vector<bag_type> bags, bag_type* bag_to_complete)
 				complete_bag(bags, inner_bag_to_complete);
 			}
 
-			(*bag_to_complete).complete = true;
+			bag_to_complete->complete = true;
 
 			break;
 		}
@@ -145,12 +120,19 @@ void complete_bag(vector<bag_type> bags, bag_type* bag_to_complete)
 bool can_carry_bag(bag_type bag, string bag_color)
 {
 	for (bag_type inner_bag : *bag.contains)
-	{
 		if (inner_bag.color.compare(bag_color) == 0 || can_carry_bag(inner_bag, bag_color))
 			return true;
-	}
 
 	return false;
+}
+
+bag_type find_bag(vector<bag_type> bags, string color)
+{
+	for (bag_type bag : bags)
+		if (bag.color.compare(color) == 0)
+			return bag;
+
+	throw "Bag not found!";
 }
 
 int number_of_bags_within(bag_type bag)
