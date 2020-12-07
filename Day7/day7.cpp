@@ -58,6 +58,7 @@ vector<bag_type> read_bags()
 	return bags;
 }
 
+// TODO Consider using regex to avoid this messy way of reading the data
 bag_type read_bag_type(bool is_first)
 {
 	bag_type bag;
@@ -109,6 +110,9 @@ bag_type read_bag_type(bool is_first)
 
 void complete_bag(vector<bag_type> bags, bag_type* bag_to_complete)
 {
+	if (bag_to_complete->complete)
+		return;
+
 	for (int i = 0; i < bags.size(); i++)
 	{
 		bag_type bag = bags[i];
@@ -118,13 +122,16 @@ void complete_bag(vector<bag_type> bags, bag_type* bag_to_complete)
 			{
 				delete (*bag_to_complete).contains;
 				(*bag_to_complete).contains = bag.contains;
+				(*bag_to_complete).complete = bag.complete;
 			}
 
-			for (int j = 0; j < bag_to_complete->contains->size(); j++)
+			for (int j = 0; !bag_to_complete->complete && j < bag_to_complete->contains->size(); j++)
 			{
-				bag_type* inner_bag = &(*bag_to_complete->contains)[j];
-				complete_bag(bags, inner_bag);
+				bag_type* inner_bag_to_complete = &(*bag_to_complete->contains)[j];
+				complete_bag(bags, inner_bag_to_complete);
 			}
+
+			(*bag_to_complete).complete = true;
 
 			break;
 		}

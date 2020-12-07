@@ -8,6 +8,7 @@ struct bag_type
 	int number = 0;
 	string color;
 	vector<bag_type>* contains;
+	bool complete = false;
 };
 
 void part1();
