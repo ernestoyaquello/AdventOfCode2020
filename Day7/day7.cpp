@@ -19,6 +19,8 @@ void part1()
 	}
 
 	cout << number_of_valid_bags;
+
+	for (bag_type bag : bags) delete bag.contains;
 }
 
 void part2()
@@ -39,6 +41,8 @@ void part2()
 
 	int total_bags = number_of_bags_within(shinny_gold_bag);
 	cout << total_bags;
+
+	for (bag_type bag : bags) delete bag.contains;
 }
 
 vector<bag_type> read_bags()
