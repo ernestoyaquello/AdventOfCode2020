@@ -2,7 +2,7 @@
 
 int main()
 {
-	vector<instruction> instructions = read_instructions();
+	vector<instruction_type> instructions = read_instructions();
 	//int result = part1(instructions);
 	int result = part2(instructions);
 	cout << result;
@@ -10,74 +10,82 @@ int main()
 	return 0;
 }
 
-vector<instruction> read_instructions()
+vector<instruction_type> read_instructions()
 {
-	vector<instruction> instructions;
-
+	int line_number = 0;
 	string command, value;
+	vector<instruction_type> instructions;
 	while (cin >> command && cin >> value)
 	{
-		instruction instruction;
-		instruction.type = command.at(0);
+		instruction_type instruction;
+		instruction.command = command.at(0);
 		instruction.value = stoi(value);
+		instruction.line_number = line_number++;
 		instructions.push_back(instruction);
 	}
 
 	return instructions;
 }
 
-int part1(vector<instruction> instructions)
+int part1(vector<instruction_type> instructions)
 {
 	int accumulator = 0;
-	execute(instructions, &accumulator);
+	execute_instructions(instructions, &accumulator);
 	return accumulator;
 }
 
-int part2(vector<instruction> instructions)
+int part2(vector<instruction_type> instructions)
 {
-	for (int i = 0; i < instructions.size(); i++)
+	int line_number = 0, accumulator = 0;
+	while (line_number < instructions.size())
 	{
-		instruction* fixable_instruction = &instructions[i];
-		if (fixable_instruction->type != nop && fixable_instruction->type != jmp)
-			continue;
-
-		fixable_instruction->type = fixable_instruction->type == jmp ? nop : jmp;
-		for (int j = 0; j < instructions.size(); j++)
-			(&instructions[j])->visited = false;
-
-		int accumulator = 0;
-		if (execute(instructions, &accumulator))
-			return accumulator;
-
-		fixable_instruction->type = fixable_instruction->type == jmp ? nop : jmp;
-	}
-
-	return 0;
-}
-
-bool execute(vector<instruction> instructions, int* accumulator)
-{
-	for (int i = 0; i < instructions.size(); i++)
-	{
-		instruction* instruction = &instructions[i];
-
-		if (instruction->visited)
-			return false;
-
-		switch (instruction->type)
+		instruction_type* instruction_ptr = &instructions[line_number];
+		if (instruction_ptr->command == nop || instruction_ptr->command == jmp)
 		{
-		case nop:
-			break;
-		case acc:
-			*accumulator += instruction->value;
-			break;
-		case jmp:
-			i += instruction->value - 1;
-			break;
+			instruction_ptr->command = instruction_ptr->command == jmp ? nop : jmp; // Apply potential fix
+			if (execute_instructions(instructions, &accumulator, line_number, true))
+				return accumulator;
+			instruction_ptr->command = instruction_ptr->command == jmp ? nop : jmp; // Undo useless fix
 		}
 
-		instruction->visited = true;
+		line_number = execute_instruction(instruction_ptr, &accumulator);
+	}
+
+	return accumulator;
+}
+
+bool execute_instructions(vector<instruction_type> instructions, int* acc_ptr, int line_number, bool restore_on_error)
+{
+	int acc_backup = *acc_ptr;
+	vector<instruction_type> visited_backup;
+	while (line_number < instructions.size())
+	{
+		instruction_type* instruction_ptr = &instructions[line_number];
+		if (instruction_ptr->visited)
+		{
+			if (restore_on_error)
+			{
+				*acc_ptr = acc_backup;
+				for (instruction_type visited_instruction : visited_backup)
+					(&instructions[visited_instruction.line_number])->visited = visited_instruction.visited;
+			}
+
+			return false;
+		}
+
+		visited_backup.push_back(*instruction_ptr);
+		line_number = execute_instruction(instruction_ptr, acc_ptr);
 	}
 
 	return true;
+}
+
+int execute_instruction(instruction_type* instruction_ptr, int* acc_ptr)
+{
+	instruction_ptr->visited = true;
+	*acc_ptr += instruction_ptr->command == acc ? instruction_ptr->value : 0;
+
+	return instruction_ptr->command == jmp
+		? instruction_ptr->line_number + instruction_ptr->value
+		: instruction_ptr->line_number + 1;
 }
