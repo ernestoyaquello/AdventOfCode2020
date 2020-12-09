@@ -3,6 +3,8 @@
 
 using namespace std;
 
+const int preamble_size = 25;
+
 int part1();
 int part2();
-vector<int> read_until_invalid_number(const int max_numbers = 25);
+vector<int> read_until_invalid_number();
