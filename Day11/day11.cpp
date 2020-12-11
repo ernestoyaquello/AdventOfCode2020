@@ -1,4 +1,4 @@
-﻿#include "day11.h"
+#include "day11.h"
 
 int main()
 {
@@ -31,7 +31,7 @@ vector<string> read_layout()
 int count_occupied_seats_when_movement_stops(vector<string> layout, int tolerance, bool look_further)
 {
 	vector<string> next_layout;
-	while (!are_layouts_equal(layout, next_layout = calculate_next_layout(layout, tolerance, look_further)))
+	while (!are_layouts_equal(&layout, &(next_layout = calculate_next_layout(&layout, tolerance, look_further))))
 		layout = next_layout;
 
 	int total_occupied = 0;
@@ -42,22 +42,22 @@ int count_occupied_seats_when_movement_stops(vector<string> layout, int toleranc
 	return total_occupied;
 }
 
-vector<string> calculate_next_layout(vector<string> layout, int tolerance, bool look_further)
+vector<string> calculate_next_layout(vector<string>* layout_ptr, int tolerance, bool look_further)
 {
 	vector<string> next_layout;
-	for (int i = 0; i < layout.size(); i++)
+	for (int i = 0; i < layout_ptr->size(); i++)
 	{
-		string next_row = layout[i];
-		for (int j = 0; j < layout[i].size(); j++)
+		string next_row = (*layout_ptr)[i];
+		for (int j = 0; j < (*layout_ptr)[i].size(); j++)
 		{
-			char character = layout[i][j];
+			char character = (*layout_ptr)[i][j];
 			if (character != '.')
 			{
-				int occupied_adjacent = count_occupied_adjacent(layout, i, j, look_further);
+				int occupied_adjacent = count_occupied_adjacent(layout_ptr, i, j, look_further);
 				if (character == 'L' && occupied_adjacent == 0) character = '#'; // Empty seat with no adjacent occupied seats becomes occupied
 				if (character == '#' && occupied_adjacent >= tolerance) character = 'L'; // Occupied seat with <tolerance> or more adjacent occupied seats becomes empty
+				next_row[j] = character;
 			}
-			next_row[j] = character;
 		}
 		next_layout.push_back(next_row);
 	}
@@ -65,39 +65,39 @@ vector<string> calculate_next_layout(vector<string> layout, int tolerance, bool 
 	return next_layout;
 }
 
-int count_occupied_adjacent(vector<string> layout, int i, int j, bool look_further)
+int count_occupied_adjacent(vector<string>* layout_ptr, int i, int j, bool look_further)
 {
-	return is_visible_seat_occupied(layout, i, j, -1, -1, look_further) +
-		is_visible_seat_occupied(layout, i, j, -1, 0, look_further) +
-		is_visible_seat_occupied(layout, i, j, -1, +1, look_further) +
-		is_visible_seat_occupied(layout, i, j, 0, -1, look_further) +
-		is_visible_seat_occupied(layout, i, j, 0, +1, look_further) +
-		is_visible_seat_occupied(layout, i, j, +1, -1, look_further) +
-		is_visible_seat_occupied(layout, i, j, +1, 0, look_further) +
-		is_visible_seat_occupied(layout, i, j, +1, +1, look_further);
+	return (is_visible_seat_occupied(layout_ptr, i, j, -1, -1, look_further) ? 1 : 0) +
+		(is_visible_seat_occupied(layout_ptr, i, j, -1, 0, look_further) ? 1 : 0) +
+		(is_visible_seat_occupied(layout_ptr, i, j, -1, +1, look_further) ? 1 : 0) +
+		(is_visible_seat_occupied(layout_ptr, i, j, 0, -1, look_further) ? 1 : 0) +
+		(is_visible_seat_occupied(layout_ptr, i, j, 0, +1, look_further) ? 1 : 0) +
+		(is_visible_seat_occupied(layout_ptr, i, j, +1, -1, look_further) ? 1 : 0) +
+		(is_visible_seat_occupied(layout_ptr, i, j, +1, 0, look_further) ? 1 : 0) +
+		(is_visible_seat_occupied(layout_ptr, i, j, +1, +1, look_further) ? 1 : 0);
 }
 
-bool is_visible_seat_occupied(vector<string> layout, int i, int j, int i_dir, int j_dir, bool look_further)
+bool is_visible_seat_occupied(vector<string>* layout_ptr, int i, int j, int i_dir, int j_dir, bool look_further)
 {
-	for (int next_i = i + i_dir, next_j = j + j_dir;
-		next_i >= 0 && next_i < layout.size() && next_j >= 0 && next_j < layout[0].size();
-		next_i += i_dir, next_j += j_dir)
+	int limit_i = i_dir > 0 ? layout_ptr->size() : -1;
+	int limit_j = j_dir > 0 ? (*layout_ptr)[0].size() : -1;
+	for (int next_i = i + i_dir, next_j = j + j_dir; next_i != limit_i && next_j != limit_j; next_i += i_dir, next_j += j_dir)
 	{
-		if (layout[next_i][next_j] == '.')
+		if ((*layout_ptr)[next_i][next_j] == '.')
 		{
 			if (!look_further) return false;
 		}
-		else return layout[next_i][next_j] == '#';
+		else return (*layout_ptr)[next_i][next_j] == '#';
 	}
 
 	return false;
 }
 
-bool are_layouts_equal(vector<string> layout, vector<string> other_layout)
+bool are_layouts_equal(vector<string>* layout_ptr, vector<string>* other_layout_ptr)
 {
-	for (int i = 0; i < layout.size(); i++)
-		for (int j = 0; j < layout[i].size(); j++)
-			if (layout[i][j] != other_layout[i][j])
+	for (int i = 0; i < layout_ptr->size(); i++)
+		for (int j = 0; j < (*layout_ptr)[i].size(); j++)
+			if ((*layout_ptr)[i][j] != (*other_layout_ptr)[i][j])
 				return false;
 
 	return true;
