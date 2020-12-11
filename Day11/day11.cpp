@@ -64,8 +64,6 @@ std::vector<std::string> calculate_next_layout(std::vector<std::string>* layout_
 
 int count_occupied_adjacent(std::vector<std::string>* layout_ptr, std::size_t i, std::size_t j, bool look_further)
 {
-	const std::pair<int, int> adjacent_directions[8] = { {-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1} };
-
 	auto occupied_adyacent_count = 0;
 	for (const auto direction : adjacent_directions)
 		if (is_visible_seat_occupied(layout_ptr, i, j, direction.first, direction.second, look_further))

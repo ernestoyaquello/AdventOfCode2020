@@ -3,6 +3,8 @@
 #include <vector>
 #include <utility>
 
+const std::pair<int, int> adjacent_directions[8] = { {-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1} };
+
 int part1(std::vector<std::string> layout);
 int part2(std::vector<std::string> layout);
 std::vector<std::string> read_layout();
