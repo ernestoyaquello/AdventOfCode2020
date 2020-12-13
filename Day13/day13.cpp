@@ -34,22 +34,14 @@ unsigned long long part2()
 	const unsigned long long min = 100000000000000L;
 
 	auto bus_ids_with_offset = read_times_with_offset();
-	std::sort(bus_ids_with_offset.begin(), bus_ids_with_offset.end(), compare_bus_ids);
 	unsigned long long jump_size = bus_ids_with_offset[0].first;
-	unsigned long long position = ((min / jump_size) > 0 ? ((min / jump_size) * jump_size) - jump_size : 0) - bus_ids_with_offset[0].second;
+	unsigned long long position = (min / jump_size) * jump_size;
 	for (std::size_t i = 1; i < bus_ids_with_offset.size(); i++)
 	{
-		const auto local_offset = bus_ids_with_offset[i].second;
 		const unsigned long long local_jump_size = bus_ids_with_offset[i].first;
-		unsigned long long local_position = (position / local_jump_size) > 0
-			? ((position / local_jump_size) * local_jump_size) - local_jump_size
-			: 0;
-		while ((local_position - local_offset) != position)
-		{
-			local_position += local_jump_size;
-			while (position < (local_position - local_offset))
-				position += jump_size;
-		}
+		const unsigned long long local_offset = bus_ids_with_offset[i].second;
+		while (((position + local_offset) % local_jump_size) != 0)
+			position += jump_size;
 
 		jump_size = local_jump_size * jump_size;
 	}
@@ -93,9 +85,4 @@ std::vector<std::pair<unsigned short, unsigned short>> read_times_with_offset()
 	}
 
 	return bus_ids_with_offset;
-}
-
-bool compare_bus_ids(const std::pair<unsigned short, unsigned short> first, const std::pair<unsigned short, unsigned short> second)
-{
-	return first.first < second.first;
 }
