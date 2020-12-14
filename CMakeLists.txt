@@ -1,4 +1,5 @@
 ﻿cmake_minimum_required (VERSION 3.8)
+set(CMAKE_CXX_STANDARD 17)
 
 project ("AdventOfCode2020")
 #add_subdirectory ("Day1")
@@ -13,4 +14,5 @@ project ("AdventOfCode2020")
 #add_subdirectory ("Day10")
 #add_subdirectory ("Day11")
 #add_subdirectory ("Day12")
-add_subdirectory ("Day13")
+#add_subdirectory ("Day13")
+add_subdirectory ("Day14")
