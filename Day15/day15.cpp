@@ -15,23 +15,23 @@ int main()
 	return 0;
 }
 
-int part1()
+unsigned int part1()
 {
 	return read_numbers_until_iteration(2020);
 }
 
-int part2()
+unsigned int part2()
 {
 	return read_numbers_until_iteration(30000000);
 }
 
-int read_numbers_until_iteration(std::size_t last_iteration)
+unsigned int read_numbers_until_iteration(std::size_t last_iteration)
 {
-	std::map<int, std::vector<std::size_t>> numbers_with_index;
-	std::map<int, std::vector<std::size_t>>::iterator numbers_map_iterator;
+	unsigned int number = 0;
+	std::unordered_map<unsigned int, std::vector<std::size_t>> numbers_with_index;
+	std::unordered_map<unsigned int, std::vector<std::size_t>>::iterator numbers_map_iterator;
 	std::size_t iteration = 0;
-	int number = 0;
-	while (iteration < last_iteration)
+	while (iteration++ < last_iteration)
 	{
 		if (!std::cin.eof())
 			std::cin >> number;
@@ -41,12 +41,18 @@ int read_numbers_until_iteration(std::size_t last_iteration)
 			: 0;
 
 		if ((numbers_map_iterator = numbers_with_index.find(number)) == numbers_with_index.end())
+		{
 			numbers_with_index.insert(std::make_pair(number, std::vector<std::size_t> { iteration }));
+		}
 		else
+		{
 			numbers_map_iterator->second.push_back(iteration);
+			if (numbers_map_iterator->second.size() == 3)
+				numbers_map_iterator->second.erase(numbers_map_iterator->second.begin());
+		}
 
-		while (!std::cin.eof() && !std::isdigit(std::cin.peek())) std::cin.get();
-		iteration++;
+		if (!std::cin.eof() && !std::isdigit(std::cin.peek()))
+			std::cin.get();
 	}
 
 	return number;

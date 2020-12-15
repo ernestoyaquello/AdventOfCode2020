@@ -1,9 +1,9 @@
 #include <iostream>
 #include <cctype>
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <chrono>
 
-int part1();
-int part2();
-int read_numbers_until_iteration(std::size_t last_iteration);
+unsigned int part1();
+unsigned int part2();
+unsigned int read_numbers_until_iteration(std::size_t last_iteration);
