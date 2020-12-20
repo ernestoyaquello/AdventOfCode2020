@@ -4,9 +4,26 @@ int main()
 {
 	const auto start_time = std::chrono::steady_clock::now();
 
-	std::cout << "Part 1: " << part1() << std::endl;
-	//std::cout << "Part 2: " << part2() << std::endl;
+	unsigned long long total = 0;
+	auto rules = read_rules(true); // False for part 1; true for part 2
+	auto messages = read_messages();
+	for (auto& message : messages)
+	{
+		auto combinations = std::vector<std::string>();
+		combinations.push_back("");
+		calculate_potential_combinations(&rules, rules[0], &message, &combinations);
+		for (const auto& combination : combinations)
+		{
+			if (combination.compare(message) == 0)
+			{
+				total++;
+				break;
+			}
+		}
+	}
+	std::cout << "Result: " << total << std::endl;
 
+	free_memory(rules);
 	const auto end_time = std::chrono::steady_clock::now();
 	const std::chrono::duration<double> elapsed_seconds = end_time - start_time;
 	std::cout << "Elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
@@ -14,49 +31,19 @@ int main()
 	return 0;
 }
 
-unsigned long long part1()
-{
-	unsigned long long total = 0;
-	auto rules = read_rules();
-	auto messages = read_messages();
-	auto text_rules = get_text_rules(&rules, rules[0], &messages);
-	for (const auto& message : messages)
-	{
-		bool is_valid_message = false;
-		for (auto it = text_rules->begin(); !is_valid_message && it != text_rules->end(); ++it)
-			is_valid_message = message.compare(*it) == 0;
-		total += is_valid_message ? 1 : 0;
-	}
-	
-	for (const auto& rule : rules)
-	{
-		if (rule.second->left != NULL)
-			delete rule.second->left;
-		if (rule.second->right != NULL)
-			delete rule.second->right;
-		delete rule.second->combinations;
-		delete rule.second;
-	}
-
-	return total;
-}
-
-unsigned long long part2()
-{
-	return 0;
-}
-
-std::unordered_map<int, rule_type*> read_rules()
+std::unordered_map<int, rule_type*> read_rules(bool is_part_2)
 {
 	std::unordered_map<int, rule_type*> rules;
 
-	int loop_rule = 1000;
+	int loop_rule = 2000;
 	while (std::cin.peek() != '\n')
 	{
 		auto rule = new rule_type();
 		std::cin >> rule->number;
 		std::cin.get();
 		bool left = true;
+		std::vector<int>* left_rules = NULL;
+		std::vector<int>* right_rules = NULL;
 		while (std::cin.peek() == ' ')
 		{
 			std::cin.get();
@@ -64,15 +51,15 @@ std::unordered_map<int, rule_type*> read_rules()
 			{
 				int number;
 				std::cin >> number;
-				rule->left = rule->left == NULL ? new std::vector<int>() : rule->left;
-				if (left) rule->left->push_back(number);
-				else rule->right->push_back(number);
+				left_rules = left_rules == NULL ? new std::vector<int>() : left_rules;
+				if (left) left_rules->push_back(number);
+				else right_rules->push_back(number);
 			}
 			else if (std::cin.peek() == '|')
 			{
 				std::cin.get();
 				left = false;
-				rule->right = new std::vector<int>();
+				right_rules = new std::vector<int>();
 			}
 			else if (std::cin.peek() == '"')
 			{
@@ -81,47 +68,34 @@ std::unordered_map<int, rule_type*> read_rules()
 				std::cin.get();
 			}
 		}
+		if (left_rules != NULL)
+		{
+			rule->rule_sequences = new std::vector<std::vector<int>*>();
+			rule->rule_sequences->push_back(left_rules);
+			if (right_rules != NULL)
+				rule->rule_sequences->push_back(right_rules);
+		}
+		if (is_part_2)
+		{
+			if (rule->number == 8)
+			{
+				right_rules = new std::vector<int>();
+				right_rules->push_back(42);
+				right_rules->push_back(8);
+				rule->rule_sequences->push_back(right_rules);
+			}
+			else if (rule->number == 11)
+			{
+				right_rules = new std::vector<int>();
+				right_rules->push_back(42);
+				right_rules->push_back(11);
+				right_rules->push_back(31);
+				rule->rule_sequences->push_back(right_rules);
+			}
+		}
+
 		std::cin.ignore();
 		rules.insert(std::make_pair(rule->number, rule));
-
-		for (std::size_t i = 0; rule->right != NULL && i < rule->right->size(); i++)
-		{
-			if ((*rule->right)[i] == rule->number)
-			{
-				// Remove loops by unrolling them into new rules that only go a few levels deep
-				int count = 4;
-				while (--count >= 0)
-				{
-					auto additional_rule = new rule_type();
-					additional_rule->number = loop_rule++;
-					additional_rule->left = new std::vector<int>();
-					additional_rule->right = new std::vector<int>();
-					for (const auto& left_val : *rule->left)
-						additional_rule->left->push_back(left_val);
-					for (std::size_t j = 0; j < rule->right->size(); j++)
-					{
-						const auto right_val = (*rule->right)[j];
-						if (right_val == rule->number)
-						{
-							additional_rule->right->push_back(additional_rule->number);
-							(*rule->right)[j] = additional_rule->number;
-						}
-						else
-						{
-							additional_rule->right->push_back(right_val);
-						}
-					}
-
-					rules.insert(std::make_pair(additional_rule->number, additional_rule));
-					rule = additional_rule;
-				}
-
-				delete rule->right;
-				rule->right = NULL;
-
-				break;
-			}
-		}		
 	}
 	std::cin.get();
 
@@ -135,82 +109,70 @@ std::vector<std::string> read_messages()
 	return lines;
 }
 
-std::set<std::string>* get_text_rules(std::unordered_map<int, rule_type*>* rules, rule_type* rule, std::vector<std::string>* messages)
+void calculate_potential_combinations(std::unordered_map<int, rule_type*>* rules, rule_type* rule, std::string* message, std::vector<std::string>* combinations)
 {
-	if (rule->combinations != NULL)
-		return rule->combinations;
-
-	rule->combinations = new std::set<std::string>();
 	if (rule->character != '\0')
 	{
-		std::string character_as_string(1, rule->character);
-		rule->combinations->insert(character_as_string);
+		auto character_string = std::string(1, rule->character);
+		if (combinations->size() > 0)
+		{
+			for (std::size_t i = 0; i < combinations->size(); i++)
+			{
+				const auto text = (*combinations)[i] + character_string;
+				if (text.size() <= message->size() && message->rfind(text, 0) == 0)
+					(*combinations)[i] = text;
+				else
+					combinations->erase(combinations->begin() + i--);
+			}
+		}
+		else if ((*message)[0] == rule->character)
+		{
+			combinations->push_back(character_string);
+		}
 	}
 	else
 	{
-		if (rule->left != NULL)
-		{
-			std::vector<std::set<std::string>*> left_text_rules(rule->left != NULL ? rule->left->size() : 0);
-			for (std::size_t i = 0; i < rule->left->size(); i++)
-				left_text_rules[i] = get_text_rules(rules, (*rules)[(*rule->left)[i]], messages);
+		auto valid_combinations = std::vector<std::string>();
 
-			auto left_combinations = get_combinations(&left_text_rules, messages);
-			for (const auto& left_combination : *left_combinations)
-				rule->combinations->insert(left_combination);
-			delete left_combinations;
+		for (std::size_t i = 0; i < rule->rule_sequences->size(); i ++)
+		{
+			const auto rule_sequence = (*rule->rule_sequences)[i];
+
+			auto potential_combinations = std::vector<std::string>();
+			for (const auto& combination : *combinations)
+				if (combination.size() < message->size())
+					potential_combinations.push_back(combination);
+
+			if (potential_combinations.size() > 0)
+			{
+				for (std::size_t j = 0; j < rule_sequence->size(); j++)
+				{
+					calculate_potential_combinations(rules, (*rules)[(*rule_sequence)[j]], message, &potential_combinations);
+					if (potential_combinations.size() == 0)
+						break;
+				}
+
+				for (const auto& combination : potential_combinations)
+					valid_combinations.push_back(combination);
+			}
 		}
 
-		if (rule->right != NULL)
-		{
-			std::vector<std::set<std::string>*> right_text_rules(rule->right != NULL ? rule->right->size() : 0);
-			for (std::size_t i = 0; i < rule->right->size(); i++)
-				right_text_rules[i] = get_text_rules(rules, (*rules)[(*rule->right)[i]], messages);
-
-			auto right_combinations = get_combinations(&right_text_rules, messages);
-			for (const auto& right_combination : *right_combinations)
-				rule->combinations->insert(right_combination);
-			delete right_combinations;
-		}
+		combinations->clear();
+		for (const auto& combination : valid_combinations)
+			combinations->push_back(combination);
 	}
-
-	return rule->combinations;
 }
 
-std::set<std::string>* get_combinations(std::vector<std::set<std::string>*>* texts_to_combine, std::vector<std::string>* messages)
+void free_memory(std::unordered_map<int, rule_type*> rules)
 {
-	auto combinations = new std::set<std::string>();
-
-	if (texts_to_combine->size() > 0)
+	for (const auto& rule : rules)
 	{
-		const auto& inner_combinations = (*texts_to_combine)[0];
-		std::set<std::string>* inner_inner_combinations = NULL;
-		for (const auto& text : *inner_combinations)
+		if (rule.second->rule_sequences != NULL)
 		{
-			// TODO Improve this check even further to discard more branches?
-			bool combination_is_valid = false;
-			for (std::size_t i = 0; !combination_is_valid && i < messages->size(); i++)
-			{
-				const auto& message = (*messages)[i];
-				combination_is_valid = message.size() >= text.size() && (message.find(text) != std::string::npos || message.compare(text) == 0);
-			}
-			if (!combination_is_valid)
-				continue;
-
-			if (inner_inner_combinations == NULL && texts_to_combine->size() > 1)
-			{
-				std::vector<std::set<std::string>*> subarray(texts_to_combine->begin() + 1, texts_to_combine->end());
-				inner_inner_combinations = get_combinations(&subarray, messages);
-			}
-			if (inner_inner_combinations == NULL || inner_inner_combinations->size() == 0)
-				combinations->insert(text);
-			else
-				for (const auto& subtext : *inner_inner_combinations)
-					combinations->insert(text + subtext);
+			for (const auto& rule_sequence : *rule.second->rule_sequences)
+				delete rule_sequence;
+			delete rule.second->rule_sequences;
 		}
-
-		if (inner_inner_combinations != NULL)
-			delete inner_inner_combinations;
+		delete rule.second;
 	}
-
-	return combinations;
 }
