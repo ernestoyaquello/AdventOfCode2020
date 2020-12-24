@@ -124,10 +124,8 @@ unsigned long long part2(std::map<std::pair<int, int>, bool> tiles)
 			{
 				auto new_tile_position = std::make_pair(tile_position.first + adjacent_direction.first, tile_position.second + +adjacent_direction.second);
 				if (tiles.find(new_tile_position) == tiles.end())
-				{
-					const auto new_tile_color = should_be_flipped(&tiles, &new_tile_position, WHITE) ? BLACK : WHITE;
-					new_tiles.insert(std::make_pair(new_tile_position, new_tile_color));
-				}
+					if (should_be_flipped(&tiles, &new_tile_position, WHITE))
+						new_tiles.insert(std::make_pair(new_tile_position, BLACK));
 			}
 		}
 		tiles = new_tiles;
