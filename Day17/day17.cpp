@@ -2,195 +2,230 @@
 
 int main()
 {
+	const auto start_time = std::chrono::steady_clock::now();
+
 	//std::cout << "Part 1: " << part1() << std::endl;
 	std::cout << "Part 2: " << part2() << std::endl;
+
+	const auto end_time = std::chrono::steady_clock::now();
+	const std::chrono::duration<double> elapsed_seconds = end_time - start_time;
+	std::cout << "Elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
+
 	return 0;
 }
 
 int part1()
 {
-	auto state = read_initial_state();
-	auto iterations = 6;
-	while (--iterations >= 0) state = calculate_next_iteration(&state);
-
-	auto total_active = 0;
-	for (int y = 0; y < state.size(); y++)
-		for (int x = 0; x < state[y].size(); x++)
-			for (int z = 0; z < state[y][x].size(); z++)
-				total_active += state[y][x][z] == '#' ? 1 : 0;
-
-	return total_active;
+	return execute(3, 6);
 }
 
 int part2()
 {
-	auto state_4d = read_initial_state_4d();
-	auto iterations = 6;
-	while (--iterations >= 0) state_4d = calculate_next_iteration_4d(&state_4d);
-
-	auto total_active = 0;
-	for (int y = 0; y < state_4d.size(); y++)
-		for (int x = 0; x < state_4d[y].size(); x++)
-			for (int z = 0; z < state_4d[y][x].size(); z++)
-				for (int w = 0; w < state_4d[y][x][z].size(); w++)
-					total_active += state_4d[y][x][z][w] == '#' ? 1 : 0;
-
-	return total_active;
+	return execute(4, 6);
 }
 
-std::vector<std::vector<std::vector<char>>> read_initial_state()
+int execute(int dimensions, int iterations)
 {
-	std::vector<std::vector<std::vector<char>>> state;
+	auto layout = read_initial_layout(dimensions);
+	auto neightbour_directions = calculate_adyacent_directions(dimensions, &std::vector<int>());
+	while (--iterations >= 0)
+	{
+		auto old_layout = layout;
+		layout = calculate_next_layout(layout, &neightbour_directions);
+		free_memory(old_layout);
+	}
+
+	auto result = count_active_cubes(layout);
+	free_memory(layout);
+
+	return result;
+}
+
+layout_type* read_initial_layout(int dimensions)
+{
+	auto layout = new layout_type();
+
+	layout->inner_vector = new std::vector<layout_type*>();
 	for (std::string line; std::getline(std::cin, line) && line.compare("") != 0;)
 	{
-		std::vector<std::vector<char>> sub_matrix;
-		for (std::size_t j = 0; j < line.size(); j++)
+		auto sublayout = new layout_type();
+		sublayout->inner_vector = new std::vector<layout_type*>();
+		for (const auto line_char : line)
 		{
-			std::vector<char> sub_vector;
-			sub_vector.push_back(line[j]);
-			sub_matrix.push_back(sub_vector);
+			auto subsublayout = new layout_type();
+			auto subsublayout_backup = subsublayout;
+			for (std::size_t i = 3; i < dimensions; i++)
+			{
+				auto new_subsublayout = new layout_type();
+				subsublayout->inner_vector = new std::vector<layout_type*>();
+				subsublayout->inner_vector->push_back(new_subsublayout);
+				subsublayout = new_subsublayout;
+			}
+			subsublayout->last_vector = new std::vector<char>();
+			subsublayout->last_vector->push_back(line_char);
+			sublayout->inner_vector->push_back(subsublayout_backup);
 		}
-		state.push_back(sub_matrix);
+		layout->inner_vector->push_back(sublayout);
 	}
 
-	return state;
+	return layout;
 }
 
-std::vector<std::vector<std::vector<char>>> calculate_next_iteration(std::vector<std::vector<std::vector<char>>>* old_state_ptr)
+std::vector<std::vector<int>> calculate_adyacent_directions(int dimensions, std::vector<int>* current_direction)
 {
-	std::size_t y_limit = old_state_ptr->size() + 2;
-	std::size_t x_limit = (*old_state_ptr)[0].size() + 2;
-	std::size_t z_limit = (*old_state_ptr)[0][0].size() + 2;
+	std::vector<std::vector<int>> permutations;
 
-	std::vector<std::vector<std::vector<char>>> new_state;
-	for (std::size_t y = 0; y < y_limit; y++)
+	for (auto dir = -1; dir <= 1; dir++)
 	{
-		std::vector<std::vector<char>> submatrix;
-		for (std::size_t x = 0; x < x_limit; x++)
+		current_direction->push_back(dir);
+		if (current_direction->size() == dimensions)
 		{
-			auto subvector = std::vector<char>(z_limit);
-			submatrix.push_back(subvector);
+			auto is_all_zeroes = true;
+			for (std::size_t j = 0; is_all_zeroes && j < current_direction->size(); j++)
+				is_all_zeroes = (*current_direction)[j] == 0;
+
+			if (!is_all_zeroes)
+				permutations.push_back(*current_direction);
 		}
-		new_state.push_back(submatrix);
+		else
+		{
+			for (const auto& permutation : calculate_adyacent_directions(dimensions, current_direction))
+				permutations.push_back(permutation);
+		}
+		current_direction->erase(current_direction->end() - 1);
 	}
 
-	for (int y = 0; y < y_limit; y++)
-	{
-		for (int x = 0; x < x_limit; x++)
-		{
-			for (int z = 0; z < z_limit; z++)
-			{
-				auto active_adyacent_count = 0;
-				for (const auto &direction : adjacent_directions)
-				{
-					auto temp_y = y - 1 + std::get<0>(direction);
-					auto temp_x = x - 1 + std::get<1>(direction);
-					auto temp_z = z - 1 + std::get<2>(direction);
-					active_adyacent_count += get_value(old_state_ptr, temp_y, temp_x, temp_z) == '#' ? 1 : 0;
-				}
+	return permutations;
+}
 
-				auto cube_value = get_value(old_state_ptr, y - 1, x - 1, z - 1);
-				if (cube_value == '#')
-					new_state[y][x][z] = (active_adyacent_count == 2 || active_adyacent_count == 3) ? '#' : '.';
+layout_type* calculate_next_layout(layout_type* old_layout, const std::vector<std::vector<int>>* adyacent_directions)
+{
+	auto new_layout = get_next_layout_empty(old_layout);
+	auto new_indices = calculate_layout_indices(new_layout, &std::vector<int>());
+	
+	for (const auto &indices : new_indices) // Iterate over each position
+	{
+		char old_cube_value = '.';
+		auto old_inner = old_layout;
+		auto new_inner = new_layout;
+		for (int i = 0; i < indices.size(); i++)
+		{
+			const auto new_inner_index = indices[i];
+			const auto old_inner_index = new_inner_index - 1;
+
+			new_inner = new_inner->inner_vector != NULL ? (*new_inner->inner_vector)[new_inner_index] : new_inner;
+
+			if (old_inner == NULL)
+				old_inner = NULL;
+			else if (old_inner->last_vector != NULL)
+				old_cube_value = old_inner_index >= 0 && old_inner_index < old_inner->last_vector->size() ? (*old_inner->last_vector)[old_inner_index] : '.';
+			else
+				old_inner = old_inner_index >= 0 && old_inner_index < old_inner->inner_vector->size() ? (*old_inner->inner_vector)[old_inner_index] : NULL;
+		}
+
+		unsigned int total_active_adyacents = 0;
+		for (const auto &adyacents : *adyacent_directions) // Iterate over neightbour direction
+		{
+			char value = '.';
+			auto old_inner = old_layout;
+			for (int i = 0; old_inner != NULL && i < indices.size(); i++)
+			{
+				auto old_inner_index = indices[i] - 1 + adyacents[i];
+				if (old_inner == NULL)
+					old_inner = NULL;
+				else if (old_inner->last_vector != NULL)
+					value = old_inner_index >= 0 && old_inner_index < old_inner->last_vector->size() ? (*old_inner->last_vector)[old_inner_index] : '.';
 				else
-					new_state[y][x][z] = active_adyacent_count == 3 ? '#' : '.';
+					old_inner = old_inner_index >= 0 && old_inner_index < old_inner->inner_vector->size() ? (*old_inner->inner_vector)[old_inner_index] : NULL;
 			}
+			total_active_adyacents += value == '#' ? 1 : 0;
+			if (total_active_adyacents > 3)
+				break;
 		}
+
+		if (old_cube_value == '#')
+			(*new_inner->last_vector)[indices[indices.size() - 1]] = (total_active_adyacents == 2 || total_active_adyacents == 3) ? '#' : '.';
+		else
+			(*new_inner->last_vector)[indices[indices.size() - 1]] = total_active_adyacents == 3 ? '#' : '.';
 	}
 
-	return new_state;
+	return new_layout;
 }
 
-char get_value(std::vector<std::vector<std::vector<char>>>* state_ptr, int y, int x, int z)
+layout_type* get_next_layout_empty(layout_type* old_layout)
 {
-	if (y < 0 || y >= state_ptr->size()) return '.';
-	if (x < 0 || x >= (*state_ptr)[y].size()) return '.';
-	if (z < 0 || z >= (*state_ptr)[y][x].size()) return '.';
+	const auto new_layout = new layout_type();
 
-	return (*state_ptr)[y][x][z];
-}
-
-std::vector<std::vector<std::vector<std::vector<char>>>> read_initial_state_4d()
-{
-	std::vector<std::vector<std::vector<std::vector<char>>>> state;
-	for (std::string line; std::getline(std::cin, line) && line.compare("") != 0;)
+	if (old_layout->inner_vector != NULL)
 	{
-		std::vector<std::vector<std::vector<char>>> sub_matrix;
-		for (std::size_t j = 0; j < line.size(); j++)
-		{
-			std::vector<char> sub_sub_vector;
-			sub_sub_vector.push_back(line[j]);
-			std::vector<std::vector<char>> sub_vector;
-			sub_vector.push_back(sub_sub_vector);
-			sub_matrix.push_back(sub_vector);
-		}
-		state.push_back(sub_matrix);
+		new_layout->inner_vector = new std::vector<layout_type*>();
+		new_layout->inner_vector->push_back(get_next_layout_empty((*old_layout->inner_vector)[0]));
+		new_layout->inner_vector->push_back(get_next_layout_empty((*old_layout->inner_vector)[0]));
+		for (const auto& inner_old : *old_layout->inner_vector)
+			new_layout->inner_vector->push_back(get_next_layout_empty(inner_old));
+	}
+	else
+	{
+		new_layout->last_vector = new std::vector<char>(old_layout->last_vector->size() + 2);
 	}
 
-	return state;
+	return new_layout;
 }
 
-std::vector<std::vector<std::vector<std::vector<char>>>> calculate_next_iteration_4d(std::vector<std::vector<std::vector<std::vector<char>>>>* old_state_ptr)
+std::vector<std::vector<int>> calculate_layout_indices(layout_type* layout, std::vector<int>* current_index_sequence)
 {
-	std::size_t y_limit = old_state_ptr->size() + 2;
-	std::size_t x_limit = (*old_state_ptr)[0].size() + 2;
-	std::size_t z_limit = (*old_state_ptr)[0][0].size() + 2;
-	std::size_t w_limit = (*old_state_ptr)[0][0][0].size() + 2;
+	std::vector<std::vector<int>> indices;
 
-	std::vector<std::vector<std::vector<std::vector<char>>>> new_state;
-	for (std::size_t y = 0; y < y_limit; y++)
+	if (layout->last_vector != NULL)
 	{
-		std::vector<std::vector<std::vector<char>>> submatrix;
-		for (std::size_t x = 0; x < x_limit; x++)
+		for (int i = 0; i < layout->last_vector->size(); i++)
 		{
-			std::vector<std::vector<char>> subvector;
-			for (std::size_t z = 0; z < z_limit; z++)
-			{
-				auto subsubvector = std::vector<char>(w_limit);
-				subvector.push_back(subsubvector);
-			}
-			submatrix.push_back(subvector);
+			current_index_sequence->push_back(i);
+			indices.push_back(*current_index_sequence);
+			current_index_sequence->erase(current_index_sequence->end() - 1);
 		}
-		new_state.push_back(submatrix);
 	}
-
-	for (int y = 0; y < y_limit; y++)
+	else
 	{
-		for (int x = 0; x < x_limit; x++)
+		for (int i = 0; i < layout->inner_vector->size(); i++)
 		{
-			for (int z = 0; z < z_limit; z++)
-			{
-				for (int w = 0; w < w_limit; w++)
-				{
-					auto active_adyacent_count = 0;
-					for (const auto& direction_4d : adjacent_directions_4d)
-					{
-						auto temp_y = y - 1 + std::get<0>(direction_4d);
-						auto temp_x = x - 1 + std::get<1>(direction_4d);
-						auto temp_z = z - 1 + std::get<2>(direction_4d);
-						auto temp_w = w - 1 + std::get<3>(direction_4d);
-						active_adyacent_count += get_value_4d(old_state_ptr, temp_y, temp_x, temp_z, temp_w) == '#' ? 1 : 0;
-					}
-
-					auto cube_value = get_value_4d(old_state_ptr, y - 1, x - 1, z - 1, w - 1);
-					if (cube_value == '#')
-						new_state[y][x][z][w] = (active_adyacent_count == 2 || active_adyacent_count == 3) ? '#' : '.';
-					else
-						new_state[y][x][z][w] = active_adyacent_count == 3 ? '#' : '.';
-				}
-			}
+			current_index_sequence->push_back(i);
+			for (auto &inner_index : calculate_layout_indices((*layout->inner_vector)[i], current_index_sequence))
+				indices.push_back(inner_index);
+			current_index_sequence->erase(current_index_sequence->end() - 1);
 		}
 	}
 
-	return new_state;
+	return indices;
 }
 
-char get_value_4d(std::vector<std::vector<std::vector<std::vector<char>>>>* state_ptr, int y, int x, int z, int w)
+unsigned int count_active_cubes(layout_type* layout)
 {
-	if (y < 0 || y >= state_ptr->size()) return '.';
-	if (x < 0 || x >= (*state_ptr)[y].size()) return '.';
-	if (z < 0 || z >= (*state_ptr)[y][x].size()) return '.';
-	if (w < 0 || w >= (*state_ptr)[y][x][z].size()) return '.';
+	unsigned int total = 0;
 
-	return (*state_ptr)[y][x][z][w];
+	if (layout->last_vector != NULL)
+		for (int i = 0; i < layout->last_vector->size(); i++)
+			total += (*layout->last_vector)[i] == '#' ? 1 : 0;
+	else
+		for (int i = 0; i < layout->inner_vector->size(); i++)
+			total += count_active_cubes((*layout->inner_vector)[i]);
+
+	return total;
+}
+
+void free_memory(layout_type* layout)
+{
+	if (layout->last_vector != NULL)
+	{
+		delete layout->last_vector;
+	}
+	else
+	{
+		for (int i = 0; i < layout->inner_vector->size(); i++)
+			free_memory((*layout->inner_vector)[i]);
+		
+		delete layout->inner_vector;
+	}
+
+	delete layout;
 }

@@ -1,36 +1,23 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <tuple>
 #include <utility>
+#include <chrono>
 
-// Y, X, Z
-const std::tuple<int, int, int> adjacent_directions[26] =
+struct layout_type
 {
-    {-1, -1, -1}, {-1, 0, -1}, {-1, 1, -1}, {0, -1, -1}, {0, 0, -1}, {0, 1, -1}, {1, -1, -1}, {1, 0, -1}, {1, 1, -1},
-    {-1, -1,  0}, {-1, 0,  0}, {-1, 1,  0}, {0, -1,  0},             {0, 1,  0}, {1, -1,  0}, {1, 0,  0}, {1, 1,  0},
-    {-1, -1,  1}, {-1, 0,  1}, {-1, 1,  1}, {0, -1,  1}, {0, 0,  1}, {0, 1,  1}, {1, -1,  1}, {1, 0,  1}, {1, 1,  1}
-};
-
-// Y, X, Z, W
-const std::tuple<int, int, int, int> adjacent_directions_4d[80] =
-{
-    {-1, -1, -1, -1}, {-1, 0, -1, -1}, {-1, 1, -1, -1}, {0, -1, -1, -1}, {0, 0, -1, -1}, {0, 1, -1, -1}, {1, -1, -1, -1}, {1, 0, -1, -1}, {1, 1, -1, -1},
-    {-1, -1,  0, -1}, {-1, 0,  0, -1}, {-1, 1,  0, -1}, {0, -1,  0, -1}, {0, 0,  0, -1}, {0, 1,  0, -1}, {1, -1,  0, -1}, {1, 0,  0, -1}, {1, 1,  0, -1},
-    {-1, -1,  1, -1}, {-1, 0,  1, -1}, {-1, 1,  1, -1}, {0, -1,  1, -1}, {0, 0,  1, -1}, {0, 1,  1, -1}, {1, -1,  1, -1}, {1, 0,  1, -1}, {1, 1,  1, -1},
-    {-1, -1, -1,  0}, {-1, 0, -1,  0}, {-1, 1, -1,  0}, {0, -1, -1,  0}, {0, 0, -1,  0}, {0, 1, -1,  0}, {1, -1, -1,  0}, {1, 0, -1,  0}, {1, 1, -1,  0},
-    {-1, -1,  0,  0}, {-1, 0,  0,  0}, {-1, 1,  0,  0}, {0, -1,  0,  0},                 {0, 1,  0,  0}, {1, -1,  0,  0}, {1, 0,  0,  0}, {1, 1,  0,  0},
-    {-1, -1,  1,  0}, {-1, 0,  1,  0}, {-1, 1,  1,  0}, {0, -1,  1,  0}, {0, 0,  1,  0}, {0, 1,  1,  0}, {1, -1,  1,  0}, {1, 0,  1,  0}, {1, 1,  1,  0},
-    {-1, -1, -1,  1}, {-1, 0, -1,  1}, {-1, 1, -1,  1}, {0, -1, -1,  1}, {0, 0, -1,  1}, {0, 1, -1,  1}, {1, -1, -1,  1}, {1, 0, -1,  1}, {1, 1, -1,  1},
-    {-1, -1,  0,  1}, {-1, 0,  0,  1}, {-1, 1,  0,  1}, {0, -1,  0,  1}, {0, 0,  0,  1}, {0, 1,  0,  1}, {1, -1,  0,  1}, {1, 0,  0,  1}, {1, 1,  0,  1},
-    {-1, -1,  1,  1}, {-1, 0,  1,  1}, {-1, 1,  1,  1}, {0, -1,  1,  1}, {0, 0,  1,  1}, {0, 1,  1,  1}, {1, -1,  1,  1}, {1, 0,  1,  1}, {1, 1,  1,  1}
+    std::vector<layout_type*>* inner_vector = NULL;
+    std::vector<char>* last_vector = NULL;
 };
 
 int part1();
 int part2();
-std::vector<std::vector<std::vector<char>>> read_initial_state();
-std::vector<std::vector<std::vector<char>>> calculate_next_iteration(std::vector<std::vector<std::vector<char>>>* old_state_ptr);
-char get_value(std::vector<std::vector<std::vector<char>>>* state_ptr, int y, int x, int z);
-std::vector<std::vector<std::vector<std::vector<char>>>> read_initial_state_4d();
-std::vector<std::vector<std::vector<std::vector<char>>>> calculate_next_iteration_4d(std::vector<std::vector<std::vector<std::vector<char>>>>* old_state_ptr);
-char get_value_4d(std::vector<std::vector<std::vector<std::vector<char>>>>* state_ptr, int y, int x, int z, int w);
+
+int execute(int dimensions, int iterations);
+layout_type* read_initial_layout(int dimensions);
+std::vector<std::vector<int>> calculate_adyacent_directions(int dimensions, std::vector<int>* current_direction);
+layout_type* calculate_next_layout(layout_type* old_layout, const std::vector<std::vector<int>>* adyacent_directions);
+layout_type* get_next_layout_empty(layout_type* old_layout);
+std::vector<std::vector<int>> calculate_layout_indices(layout_type* layout, std::vector<int>* current_index_sequence);
+unsigned int count_active_cubes(layout_type* layout);
+void free_memory(layout_type* layout);
